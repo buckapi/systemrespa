@@ -64,6 +64,7 @@ export class ProductsComponent {
     public productService: ProductService
   ) {
     this.pb = new PocketBase('https://db.buckapi.com:8095'); // Inicializa PocketBase
+
     this.realtimeProducts.products$ = from(this.pb.collection('productsInventory').getFullList());
 
     // Configurar el formulario con validadores
@@ -82,6 +83,11 @@ export class ProductsComponent {
     this.loadProducts();
     this.global.applyFilters(this.selectedCategory, this.searchQuery); // Initial call to set up default view
 }
+  /* loadProducts() {
+    this.realtimeProducts.products$.subscribe((products: any[]) => {
+      // Load products if needed
+    });
+  } */
     loadProducts() {
       // Cargar productos inicialmente
       this.productService.getProducts().subscribe(products => {
@@ -222,85 +228,35 @@ async saveProduct(productData: any) {
   }
 }    
   
-updateProduct(productId: string) {
-  this.currentProductId = productId;
-  this.showForm = true;
-  this.isEditing = true;
+  updateProduct(productId: string) {
+    this.currentProductId = productId;
+    this.showForm = true;
+    this.isEditing = true;
 
-  // Obtener el producto actual y llenar el formulario
-  this.realtimeProducts.products$.subscribe(products => {
-    const product = products.find((p: any) => p.id === productId);
-    if (product) {
-      this.productForm.patchValue({
-        name: product.name,
-        description: product.description,
-        unity: product.unity,
-        price: product.price,
-        idCategoria: product.idCategoria,
-        stock: product.stock,
-        color: product.color,
-        file: product.file,
-        codeBarra: product.codeBarra
-      });
+    // Obtener el producto actual y llenar el formulario
+    this.realtimeProducts.products$.subscribe(products => {
+      const product = products.find((p: any) => p.id === productId);
+      if (product) {
+        this.productForm.patchValue({
+          name: product.name,
+/*           code: product.code,
+ */          description: product.description,
+          unity: product.unity,
+          price: product.price,
+          idCategoria: product.idCategoria,
+          stock: product.stock,
+          color: product.color,
+          file: product.file,
+          codeBarra: product.codeBarra
+        });
 
-      // Establecer la vista previa de la imagen si existe
-      if (product.file) {
-        this.imagePreview = product.file; // Asegúrate de que esto esté presente
+        if (product.image) {
+          this.imagePreview = product.image;
+        }
       }
-    }
-  });
-}
-async saveupdateProduct(productData: any) {
-  try {
-    console.log('Datos del producto a guardar:', productData); // Verifica los datos
-
-    // Obtener el producto existente para conservar los datos no cambiados
-    const existingProduct = await this.pb.collection('productsInventory').getOne(this.currentProductId);
-    
-    // Crear un FormData para enviar el producto
-    const formData = new FormData();
-    formData.append('name', productData['name'] || existingProduct['name']);
-    formData.append('price', productData['price'] || existingProduct['price']);
-    formData.append('unity', productData['unity'] || existingProduct['unity']);
-    formData.append('description', productData['description'] || existingProduct['description']);
-    formData.append('idCategoria', productData['idCategoria'] || existingProduct['idCategoria']);
-    formData.append('stock', productData['stock'] || existingProduct['stock']);
-    formData.append('color', productData['color'] || existingProduct['color']);
-    formData.append('codeBarra', productData['codeBarra'] || existingProduct['codeBarra']);
-
-    // Si existe un archivo, lo agregamos al FormData
-    if (productData.file) {
-      formData.append('file', productData.file);
-    }
-
-    // Intentar actualizar el producto
-    const record = await this.pb.collection('productsInventory').update(this.currentProductId, formData);
-
-    // Actualizar la lista de productos en tiempo real si es necesario
-    this.realtimeProducts.products$ = from(this.pb.collection('productsInventory').getFullList());
-
-    // Mostrar mensaje de éxito
-    Swal.fire({
-      icon: 'success',
-      title: 'Éxito',
-      text: 'Producto actualizado correctamente'
-    });
-
-    // Cerrar el formulario de edición
-    this.productForm.reset();
-    this.showForm = false;
-    this.isEditing = false;
-
-  } catch (error: any) {
-    console.error('Error al actualizar:', error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'No se pudo actualizar el producto. Por favor, intente nuevamente.'
     });
   }
-}
- /*  async saveupdateProduct(productData: any) {
+  async saveupdateProduct(productData: any) {
     try {
       // Crear un FormData para enviar el producto
       const formData = new FormData();
@@ -360,7 +316,7 @@ async saveupdateProduct(productData: any) {
         text: 'No se pudo actualizar el producto. Por favor, intente nuevamente.'
       });
     }
-  } */
+  }
   
   cancelEdit() {
     this.showForm = false;
